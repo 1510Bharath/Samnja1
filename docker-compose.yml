@@ -1,0 +1,21 @@
+# =============================================================================
+# docker-compose.yml — Samjna Web
+# Use this for easy deployment on any Linux server or cloud VM.
+# Run with:  docker-compose up -d
+# =============================================================================
+version: "3.9"
+
+services:
+  samjna:
+    build: .
+    container_name: samjna_web
+    ports:
+      - "80:8000"       # HTTP  — change to "443:8000" if using HTTPS via nginx
+    volumes:
+      # Recordings saved to host machine (outside container so they persist)
+      - ./recordings:/app/uploads
+      # Avatar image — place Lady1.jfif here
+      - ./static/img:/app/static/img
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped

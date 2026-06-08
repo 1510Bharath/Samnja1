@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Samjna — Multimodal Stress Assessment</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html{height:100%;overflow-y:scroll}
+body{font-family:'Segoe UI','Nirmala UI',sans-serif;background:#0D1B2A;color:#DDEEFF;
+     min-height:100%;display:block}
+.screen{display:none;width:100%;max-width:900px;margin:0 auto;padding:24px 24px 40px;
+        flex-direction:column;align-items:center}
+.screen.active{display:flex}
+h1{color:#C8A951;font-size:2.4em;font-family:Georgia,serif;margin-top:28px}
+h2{color:#C8A951;font-size:1.5em;margin:16px 0 8px}
+.subtitle{color:#8FA8C8;font-size:1.05em;margin-bottom:20px;text-align:center}
+.card{background:#122136;border-radius:10px;padding:20px;margin:12px 0;width:100%}
+.gold-btn{background:#C8A951;color:#0D1B2A;border:none;padding:12px 32px;font-size:1.1em;
+          font-weight:bold;border-radius:6px;cursor:pointer;margin:12px 4px}
+.gold-btn:hover{background:#E0C060}
+.gold-btn:disabled{background:#555;cursor:not-allowed;color:#999}
+.red-btn{background:#7B2020;color:#fff;border:none;padding:10px 24px;font-size:1em;
+         font-weight:bold;border-radius:6px;cursor:pointer;margin:8px 4px}
+input[type=text]{background:#1C2E45;border:none;color:#fff;padding:12px 16px;
+                  font-size:1.1em;border-radius:6px;width:320px}
+.lang-btn{padding:10px 20px;margin:4px;border:2px solid #334;border-radius:6px;
+          cursor:pointer;font-size:1em;background:#1C2E45;color:#DDEEFF}
+.lang-btn.sel{background:#C8A951;color:#0D1B2A;border-color:#C8A951}
+.consent-text{color:#AACCEE;font-size:0.95em;line-height:1.6}
+label.check{display:flex;align-items:center;gap:8px;margin:16px 0;cursor:pointer;font-size:1em}
+label.check input{width:18px;height:18px}
+#cam-preview{width:640px;height:480px;background:#111;border-radius:8px;position:relative}
+#cam-video{width:100%;height:100%;object-fit:cover;border-radius:8px;transform:scaleX(-1)}
+.guide-box{position:absolute;border:3px solid #50DD90;top:10%;left:25%;width:50%;
+           height:80%;border-radius:8px;pointer-events:none}
+.guide-label{position:absolute;top:6%;left:26%;color:#50DD90;font-size:0.85em}
+.dot-grid{position:relative;width:700px;height:500px;background:#0A1520;
+          border-radius:8px;margin:16px auto}
+.cal-dot{width:36px;height:36px;border-radius:50%;position:absolute;cursor:pointer;
+         display:flex;align-items:center;justify-content:center;font-size:0.8em;
+         font-weight:bold;color:#0A1520;border:2px solid #fff;transition:all 0.2s}
+.cal-dot.active{background:#50DDAA;transform:scale(1.2)}
+.cal-dot.done{background:#2A6040;opacity:0.6}
+.cal-dot.pending{background:#C8A951}
+.avatar-wrap{position:relative;display:inline-block;margin:4px 0}
+.avatar-img{width:300px;height:380px;object-fit:cover;border-radius:12px;border:2px solid #334;display:block}
+.eye-box{position:absolute;top:27%;left:18%;width:64%;height:14%;
+         border:3px solid #00DDCC;border-radius:6px;pointer-events:none;
+         box-shadow:0 0 8px rgba(0,221,204,0.5)}
+.eye-box-label{position:absolute;top:-22px;left:50%;transform:translateX(-50%);
+               color:#00DDCC;font-size:0.8em;white-space:nowrap;font-weight:bold}
+.q-box{background:#0D2030;border:2px solid #1C5070;border-radius:8px;padding:18px 24px;
+       margin:12px 0;width:100%;text-align:center;font-size:1.15em;line-height:1.6;
+       font-family:'Nirmala UI','Segoe UI',sans-serif}
+.timer{font-family:'Courier New',monospace;font-size:2em;color:#FF4444;font-weight:bold}
+.status{font-size:1.1em;font-weight:bold;margin:8px 0;min-height:1.5em;text-align:center}
+.status.recording{color:#FF6666}
+.status.prep{color:#FFDD44}
+.status.reading{color:#AACCEE}
+.dots{display:flex;gap:8px;justify-content:center;margin:8px 0}
+.dots span{font-size:1.3em}
+.dot-curr{color:#C8A951}.dot-done{color:#336633}.dot-pend{color:#334455}
+.pss-q{margin:10px 0;padding:14px 16px;background:#122136;border-radius:8px;
+       border-left:3px solid #1C5070}
+.pss-q.answered{border-left-color:#C8A951}
+.pss-q p{margin-bottom:10px;font-size:1em;line-height:1.5}
+.pss-options{display:flex;flex-direction:column;gap:6px}
+.pss-options label{display:flex;align-items:center;gap:8px;padding:6px 12px;
+                   cursor:pointer;font-size:0.95em;border-radius:4px}
+.pss-options label:hover{background:#1C3A5A}
+.pss-options input[type=radio]{width:16px;height:16px;accent-color:#C8A951;cursor:pointer;flex-shrink:0}
+.pss-result{font-size:3em;color:#50DDAA;font-weight:bold}
+@media(max-width:720px){
+  #cam-preview{width:100%;height:auto;aspect-ratio:4/3}
+  .dot-grid{width:100%;height:360px}
+  .avatar-img{width:220px;height:280px}
+}
+</style>
+</head>
+<body>
+
+<!-- CONSENT -->
+<div id="s-consent" class="screen active">
+  <h1>SAMJNA</h1>
+  <div class="subtitle">Multimodal Stress Assessment</div>
+  <div class="card">
+    <h2>Select Language / &#2990;&#3018;&#2996;&#3007; / &#3221;&#3240;&#3277;&#3240;&#3233;</h2>
+    <div style="display:flex;gap:8px;margin:12px 0;flex-wrap:wrap">
+      <button class="lang-btn sel" data-lang="english">English</button>
+      <button class="lang-btn" data-lang="tamil">&#2980;&#2990;&#3007;&#2996;&#3021;</button>
+      <button class="lang-btn" data-lang="kannada">&#3221;&#3240;&#3277;&#3240;&#3233;</button>
+    </div>
+  </div>
+  <div class="card">
+    <div style="margin-bottom:10px;font-size:1.05em">Please enter your full name:</div>
+    <input type="text" id="inp-name" placeholder="Full name">
+  </div>
+  <div class="card">
+    <h2>Informed Consent</h2>
+    <p class="consent-text">
+      I explicitly consent to the collection and commercial processing of my
+      anonymised video/audio features for product development. I also state that
+      I am above 18 years and legally allowed to take this test and accept this consent.
+    </p>
+    <label class="check"><input type="checkbox" id="chk-consent">
+      <span>I have read and accept the consent statement above</span>
+    </label>
+  </div>
+  <button class="gold-btn" id="btn-proceed" disabled>Proceed &#8594;</button>
+</div>
+
+<!-- FACE CALIBRATION -->
+<div id="s-face" class="screen">
+  <h2>Step 1 &#8212; Face Positioning</h2>
+  <div class="subtitle">Centre your face inside the green box, then click Continue.</div>
+  <div id="cam-preview">
+    <video id="cam-video" autoplay muted playsinline></video>
+    <div class="guide-box"></div>
+    <div class="guide-label">Centre your face here</div>
+  </div>
+  <div style="margin:10px 0;color:#8FA8C8">Camera permission is requested once here.</div>
+  <button class="gold-btn" id="btn-face-continue">Continue &#8594;</button>
+</div>
+
+<!-- EYE CALIBRATION -->
+<div id="s-eye" class="screen">
+  <h2>Step 2 &#8212; Eye Calibration</h2>
+  <div class="subtitle">Click each highlighted dot. Keep your head still.</div>
+  <div class="dot-grid" id="dot-grid"></div>
+  <div id="eye-progress" style="margin:8px 0">Dot 1 / 9</div>
+</div>
+
+<!-- INTERVIEW -->
+<div id="s-interview" class="screen">
+  <div style="display:flex;justify-content:space-between;width:100%;align-items:center;margin-bottom:4px">
+    <div id="phase-label" style="font-size:1.1em;font-weight:bold;color:#C8A951"></div>
+    <div class="timer" id="timer"></div>
+  </div>
+  <div class="avatar-wrap">
+    <img id="avatar-img" class="avatar-img" src="/api/avatar" alt="Avatar"
+         onerror="this.style.background='#223344';this.alt='[Avatar]'">
+    <div class="eye-box"><span class="eye-box-label">Look here</span></div>
+  </div>
+  <div class="q-box" id="q-text"></div>
+  <div class="status" id="q-status"></div>
+  <div class="dots" id="q-dots"></div>
+  <div style="display:flex;gap:12px;margin:8px 0;flex-wrap:wrap;justify-content:center">
+    <button class="red-btn" id="btn-restart" disabled>&#8635; Restart</button>
+    <button class="gold-btn" id="btn-next">Next Question &#8594;</button>
+  </div>
+</div>
+
+<!-- PSS -->
+<div id="s-pss" class="screen">
+  <h2>Perceived Stress Scale (PSS-10)</h2>
+  <div class="subtitle">Choose how often you felt this way in the last month.<br>
+    <em style="font-size:0.85em;color:#667">Scroll down to see all 10 questions. Answer all before submitting.</em></div>
+  <div id="pss-questions" style="width:100%"></div>
+  <button class="gold-btn" id="btn-pss-submit" style="margin-top:16px">Submit PSS Test</button>
+</div>
+
+<!-- DONE -->
+<div id="s-done" class="screen">
+  <h1 style="margin-top:40px">Session Complete</h1>
+  <div class="subtitle" style="margin-top:12px">Thank you for participating.<br>All recordings and results have been saved.</div>
+  <div style="margin:24px 0;text-align:center">
+    <div style="color:#8FA8C8;margin-bottom:8px">PSS Score:</div>
+    <div class="pss-result" id="pss-score-display"></div>
+    <div id="pss-interp" style="color:#8FA8C8;margin-top:8px;font-size:1.1em"></div>
+  </div>
+  <div class="card" style="text-align:center;max-width:600px">
+    <div style="color:#C8A951;font-weight:bold;margin-bottom:8px">Recordings saved to:</div>
+    <div id="output-path" style="color:#AACCEE;font-size:0.9em;word-break:break-all;font-family:monospace"></div>
+  </div>
+  <div style="display:flex;gap:16px;margin-top:20px;flex-wrap:wrap;justify-content:center">
+    <button class="gold-btn" onclick="location.reload()">Start New Session</button>
+    <button class="gold-btn" style="background:#1C3A5A;color:#AACCEE"
+      onclick="document.body.innerHTML='<div style=\'text-align:center;padding:80px;color:#C8A951;font-size:1.4em\'>You may now close this browser tab.</div>'">
+      Close Session
+    </button>
+  </div>
+  <div style="color:#445566;font-size:0.85em;margin-top:16px;text-align:center">
+    To stop the server: press Ctrl+C in the command prompt window.
+  </div>
+</div>
+
+<script>
+// ======================================================================
+// Samjna Web Client — V2 Local (robust TTS, fixed PSS)
+// ======================================================================
+const $ = id => document.getElementById(id);
+const show = id => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+  window.scrollTo({ top:0, behavior:'instant' });
+};
+
+let S = {
+  sid:null, name:'', lang:'english',
+  interview:[], pss:null,
+  qIdx:0, stream:null, recorder:null, chunks:[],
+  busy:false,        // state lock — prevents overlapping transitions
+  seqNo:0,           // question sequence number — stale callbacks are ignored
+};
+
+// ══════════════════════════════════════════════════════════════════════
+// TTS — WORD-COUNT TIMING (avoids ALL Chrome onend bugs)
+//
+// Chrome's speechSynthesis.onend fires unreliably for long utterances.
+// The pause()/resume() keepalive makes it WORSE — it triggers onend
+// prematurely. Solution: use word-count timer for flow control.
+// TTS plays in background; timer fires after estimated duration.
+// If onend fires first, timer is cancelled and callback fires immediately.
+
+const LANG_CODE = { english:'en-IN', tamil:'ta-IN', kannada:'kn-IN' };
+const FEMALE_KW = ['zira','heera','priya','female','woman',
+                    'pallavi','sapna','neerja','susan','hazel'];
+
+let _ttsTimer = null;
+
+function pickVoice(lang) {
+  if (!window.speechSynthesis) return null;
+  const voices = window.speechSynthesis.getVoices();
+  const code = LANG_CODE[lang] || 'en-IN';
+  const base = code.split('-')[0];
+  let v;
+  v = voices.find(v => v.lang.startsWith(code) &&
+    FEMALE_KW.some(k => v.name.toLowerCase().includes(k)));
+  if (v) return v;
+  v = voices.find(v => v.lang.startsWith(code));
+  if (v) return v;
+  v = voices.find(v => v.lang.startsWith(base) &&
+    FEMALE_KW.some(k => v.name.toLowerCase().includes(k)));
+  if (v) return v;
+  return voices.find(v => FEMALE_KW.some(k => v.name.toLowerCase().includes(k))) || null;
+}
+
+function speak(text, onDone) {
+  stopTTS();
+  if (!text || !text.trim()) { if (onDone) setTimeout(onDone, 200); return; }
+
+  // Estimate speech duration from word count
+  // Rate 0.88 = ~132 words/min; add 3s buffer for startup and pauses
+  const words   = text.trim().split(/\s+/).length;
+  const delayMs = Math.max(Math.round((words / 132) * 60000) + 3000, 3000);
+
+  let fired = false;
+  function advance() {
+    if (fired) return;
+    fired = true;
+    if (_ttsTimer) { clearTimeout(_ttsTimer); _ttsTimer = null; }
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    if (onDone) onDone();
+  }
+
+  // Start TTS — onend fires early if Chrome is working
+  if (window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+    setTimeout(() => {
+      if (fired) return;
+      const u  = new SpeechSynthesisUtterance(text);
+      u.lang   = LANG_CODE[S.lang] || 'en-IN';
+      u.rate   = 0.88; u.pitch = 1.05; u.volume = 0.92;
+      const v  = pickVoice(S.lang);
+      if (v) u.voice = v;
+      u.onend  = advance;
+      u.onerror = advance;
+      window.speechSynthesis.speak(u);
+    }, 100);
+  }
+
+  // Fallback timer — fires after estimated duration regardless
+  _ttsTimer = setTimeout(advance, delayMs);
+}
+
+function stopTTS() {
+  if (_ttsTimer) { clearTimeout(_ttsTimer); _ttsTimer = null; }
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+}
+
+if (window.speechSynthesis) {
+  speechSynthesis.getVoices();
+  speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+}
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// CONSENT
+// ══════════════════════════════════════════════════════════════════════
+
+document.querySelectorAll('.lang-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+    S.lang = btn.dataset.lang;
+  });
+});
+
+function checkReady() {
+  $('btn-proceed').disabled = !($('inp-name').value.trim() && $('chk-consent').checked);
+}
+$('inp-name').addEventListener('input', checkReady);
+$('chk-consent').addEventListener('change', checkReady);
+
+$('btn-proceed').addEventListener('click', async () => {
+  S.name = $('inp-name').value.trim();
+  $('btn-proceed').disabled = true;
+  $('btn-proceed').textContent = 'Creating session\u2026';
+
+  const fd = new FormData();
+  fd.append('name', S.name);
+  fd.append('language', S.lang);
+  const r = await fetch('/api/session', { method:'POST', body:fd });
+  const d = await r.json();
+  S.sid = d.session_id;
+  S.interview = d.interview;
+  S.pss = d.pss;
+
+  try {
+    S.stream = await navigator.mediaDevices.getUserMedia({
+      video: { width:640, height:480, facingMode:'user' },
+      audio: true,
+    });
+    $('cam-video').srcObject = S.stream;
+  } catch(e) {
+    alert('Camera and microphone access is required.\nPlease allow and reload.');
+    location.reload(); return;
+  }
+  show('s-face');
+});
+
+// ══════════════════════════════════════════════════════════════════════
+// FACE CALIBRATION
+// ══════════════════════════════════════════════════════════════════════
+
+$('btn-face-continue').addEventListener('click', () => {
+  show('s-eye');
+  buildDots();
+});
+
+// ══════════════════════════════════════════════════════════════════════
+// EYE CALIBRATION
+// ══════════════════════════════════════════════════════════════════════
+
+const DOT_POS = [
+  [.15,.15],[.50,.15],[.85,.15],
+  [.15,.50],[.50,.50],[.85,.50],
+  [.15,.85],[.50,.85],[.85,.85],
+];
+let dIdx = 0;
+const gaze = [];
+
+function buildDots() {
+  const g = $('dot-grid'); g.innerHTML = ''; dIdx = 0;
+  DOT_POS.forEach((p, i) => {
+    const d = document.createElement('div');
+    d.className = 'cal-dot ' + (i === 0 ? 'active' : 'pending');
+    d.style.left = `calc(${p[0]*100}% - 18px)`;
+    d.style.top  = `calc(${p[1]*100}% - 18px)`;
+    d.textContent = i + 1;
+    d.dataset.i = i;
+    d.addEventListener('click', onDot);
+    g.appendChild(d);
+  });
+  $('eye-progress').textContent = 'Dot 1 / 9';
+}
+
+function onDot(e) {
+  const i = parseInt(e.target.dataset.i);
+  if (i !== dIdx) return;
+  const g = $('dot-grid'), r = g.getBoundingClientRect();
+  const tx = DOT_POS[i][0]*g.offsetWidth, ty = DOT_POS[i][1]*g.offsetHeight;
+  const cx = e.clientX - r.left, cy = e.clientY - r.top;
+  gaze.push({
+    dot_index:i+1, target_x:Math.round(tx), target_y:Math.round(ty),
+    click_x:Math.round(cx), click_y:Math.round(cy),
+    offset:Math.round(Math.sqrt((cx-tx)**2+(cy-ty)**2)),
+    timestamp: new Date().toISOString(),
+  });
+  e.target.classList.replace('active','done');
+  dIdx++;
+  if (dIdx < 9) {
+    $('dot-grid').children[dIdx].classList.replace('pending','active');
+    $('eye-progress').textContent = `Dot ${dIdx+1} / 9`;
+  } else {
+    $('eye-progress').textContent = 'Calibration complete!';
+    fetch(`/api/gaze/${S.sid}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ dots:gaze }),
+    });
+    setTimeout(() => { S.qIdx = 0; startInterview(); }, 800);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// INTERVIEW — with state lock to prevent overlapping transitions
+// ══════════════════════════════════════════════════════════════════════
+
+let tmrId = null, prepId = null;
+
+const PH_LBL = {
+  baseline:         'Phase 1 \u2013 Baseline',
+  social_stress:    'Phase 2 \u2013 Social Evaluation',
+  cognitive_stress: 'Phase 3 \u2013 Cognitive Load',
+  recovery:         'Phase 4 \u2013 Recovery',
+};
+
+const PREP_MSG = {
+  english: s => `You have ${s} seconds to prepare. Recording starts after the countdown.`,
+  tamil:   s => `${s} seconds to prepare. Recording starts after countdown.`,
+  kannada: s => `${s} seconds to prepare. Recording starts after countdown.`,
+};
+
+const LOOK_MSG = {
+  english: 'Please look at the avatar\'s eyes throughout the interview while answering. The cyan box marks the eye area.',
+  tamil:   'Please look at the avatar\'s eyes throughout the interview while answering.',
+  kannada: 'Please look at the avatar\'s eyes throughout the interview while answering.',
+};
+
+function startInterview() {
+  show('s-interview');
+  const msg = LOOK_MSG[S.lang] || LOOK_MSG.english;
+  $('q-status').textContent = msg;
+  $('q-status').className = 'status reading';
+  $('q-text').textContent = '';
+  $('timer').textContent = '';
+  speak(msg, () => showQ());
+}
+
+async function showQ() {
+  if (S.busy) return;  // prevent overlapping transitions
+  S.busy = true;
+
+  clrTimers();
+  stopTTS();
+  await _stopRecorder();  // MUST await so previous Q's recording is saved
+  $('btn-restart').disabled = true;
+
+  if (S.qIdx >= S.interview.length) {
+    S.busy = false;
+    showPSS();
+    return;
+  }
+
+  const q = S.interview[S.qIdx];
+  $('phase-label').textContent = PH_LBL[q.phase] || q.phase;
+  $('q-text').textContent = q.text;
+  $('timer').textContent = '';
+  $('q-status').textContent = '\uD83D\uDD0A Avatar is reading the question\u2026';
+  $('q-status').className = 'status reading';
+
+  // Progress dots
+  const all = S.interview.filter(x => x.phase === q.phase);
+  const wi  = S.qIdx - S.interview.indexOf(all[0]);
+  $('q-dots').innerHTML = all.map((_,i) =>
+    `<span class="${i===wi?'dot-curr':i<wi?'dot-done':'dot-pend'}">&#9679;</span>`
+  ).join('');
+
+  S.seqNo++;         // new sequence number for this question
+  const mySeq = S.seqNo;
+  S.busy = false;    // unlock before TTS starts
+
+  speak(q.text, () => {
+    if (S.seqNo !== mySeq) return;  // stale callback — question already changed
+    afterTTS(q, mySeq);
+  });
+}
+
+function afterTTS(q, seq) {
+  if (seq !== undefined && S.seqNo !== seq) return; // stale
+  if (q.prep_secs > 0) {
+    const msg = (PREP_MSG[S.lang]||PREP_MSG.english)(q.prep_secs);
+    const mySeq = S.seqNo;
+    speak(msg, () => {
+      if (S.seqNo !== mySeq) return; // stale
+      doPrep(q);
+    });
+  } else {
+    beginRec(q);
+  }
+}
+
+function doPrep(q) {
+  let rem = q.prep_secs;
+  $('q-status').textContent = `\u23f3 Prepare \u2014 recording in ${rem}s`;
+  $('q-status').className = 'status prep';
+  $('timer').textContent = String(rem).padStart(2,'0');
+  prepId = setInterval(() => {
+    rem--;
+    $('timer').textContent = String(Math.max(0,rem)).padStart(2,'0');
+    $('q-status').textContent = `\u23f3 Prepare \u2014 recording in ${rem}s`;
+    if (rem <= 0) { clearInterval(prepId); prepId = null; beginRec(q); }
+  }, 1000);
+}
+
+function beginRec(q) {
+  // Prevent double-call: if timer is already running, skip
+  if (tmrId !== null) return;
+  $('q-status').textContent = '\uD83D\uDD34 Recording \u2014 please respond now';
+  $('q-status').className = 'status recording';
+  $('btn-restart').disabled = false;
+  _startRecorder();
+  let secs = q.q_secs;
+  updTimer(secs);
+  tmrId = setInterval(() => {
+    secs--;
+    updTimer(secs);
+    if (secs <= 0) { clearInterval(tmrId); tmrId = null; nextQ(); }
+  }, 1000);
+}
+
+function updTimer(s) {
+  $('timer').textContent =
+    `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+}
+
+function clrTimers() {
+  if (tmrId)  { clearInterval(tmrId);  tmrId  = null; }
+  if (prepId) { clearInterval(prepId); prepId = null; }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// MediaRecorder — separated from flow control for clarity
+// ══════════════════════════════════════════════════════════════════════
+
+function _startRecorder() {
+  if (!S.stream) return;
+  S.chunks       = [];
+  S.recordingQId = (S.interview[S.qIdx] || {}).global_q || null;
+  try {
+    let opts = {};
+    if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus'))
+      opts.mimeType = 'video/webm;codecs=vp8,opus';
+    else if (MediaRecorder.isTypeSupported('video/webm'))
+      opts.mimeType = 'video/webm';
+    const mr = new MediaRecorder(S.stream, opts);
+    mr.ondataavailable = e => { if (e.data.size > 0) S.chunks.push(e.data); };
+    mr.start(200);
+    S.recorder = mr;
+    console.log('Recording started:', S.recordingQId);
+  } catch(e) { console.warn('MediaRecorder:', e); }
+}
+
+function _stopRecorder() {
+  return new Promise(resolve => {
+    if (!S.recorder || S.recorder.state === 'inactive') {
+      S.recorder = null;
+      resolve(); return;
+    }
+    const rec  = S.recorder;
+    const qId  = S.recordingQId;   // snapshot which question this is
+    S.recorder = null;              // clear immediately — prevents double-stop
+    rec.onstop = async () => {
+      await _uploadChunks(qId);
+      resolve();
+    };
+    try { rec.stop(); } catch(e) { resolve(); }
+  });
+}
+
+async function _uploadChunks(qId) {
+  const chunks = S.chunks.splice(0);    // take all chunks, clear immediately
+  if (!chunks.length) return;
+  // Use the locked-in qId, fall back to current question
+  const gq = qId || (S.interview[S.qIdx] || {}).global_q;
+  if (!gq) { console.warn('Upload: no question id'); return; }
+  const blob = new Blob(chunks, { type:'video/webm' });
+  const fd   = new FormData();
+  fd.append('video', blob, `${gq}.webm`);
+  try {
+    await fetch(`/api/upload/${S.sid}/${gq}`, { method:'POST', body:fd });
+    console.log('Uploaded:', gq, Math.round(blob.size/1024), 'KB');
+  } catch(e) { console.error('Upload error:', e); }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// Next / Restart — with busy lock
+// ══════════════════════════════════════════════════════════════════════
+
+async function nextQ() {
+  if (S.busy) return;
+  S.busy = true;   // lock during transition
+  clrTimers();
+  stopTTS();
+  await _stopRecorder();
+  S.qIdx++;
+  S.busy = false;  // unlock before showQ (showQ sets its own lock)
+  showQ();
+}
+
+$('btn-next').addEventListener('click', nextQ);
+$('btn-restart').addEventListener('click', async () => {
+  if (S.busy) return;
+  clrTimers();
+  stopTTS();
+  await _stopRecorder();
+  showQ();
+});
+
+// ══════════════════════════════════════════════════════════════════════
+// PSS — clean implementation, no scrolling issues
+// ══════════════════════════════════════════════════════════════════════
+
+function showPSS() {
+  show('s-pss');
+  if (S.stream) { S.stream.getTracks().forEach(t => t.stop()); S.stream = null; }
+
+  const container = $('pss-questions');
+  container.innerHTML = '';
+
+  S.pss.questions.forEach((q, i) => {
+    const card = document.createElement('div');
+    card.className = 'pss-q';
+    card.id = `psscard${i}`;
+
+    const qText = document.createElement('p');
+    qText.innerHTML = `<strong>Q${i+1}.</strong> ${q}`;
+    card.appendChild(qText);
+
+    const opts = document.createElement('div');
+    opts.className = 'pss-options';
+
+    S.pss.options.forEach((optText, j) => {
+      const label = document.createElement('label');
+
+      const radio = document.createElement('input');
+      radio.type  = 'radio';
+      radio.name  = `pssradio${i}`;
+      radio.value = String(j);
+      radio.addEventListener('change', () => {
+        card.classList.add('answered');
+      });
+
+      const span = document.createTextNode(' ' + optText);
+      label.appendChild(radio);
+      label.appendChild(span);
+      opts.appendChild(label);
+    });
+
+    card.appendChild(opts);
+    container.appendChild(card);
+  });
+}
+
+$('btn-pss-submit').addEventListener('click', async () => {
+  const answers = [];
+  for (let i = 0; i < 10; i++) {
+    const sel = document.querySelector(`input[name="pssradio${i}"]:checked`);
+    if (!sel) {
+      const el = $(`psscard${i}`);
+      if (el) el.scrollIntoView({ behavior:'smooth', block:'center' });
+      alert(`Please answer question ${i+1}`);
+      return;
+    }
+    answers.push(parseInt(sel.value));
+  }
+  const r = await fetch(`/api/pss/${S.sid}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ answers }),
+  });
+  const d = await r.json();
+  $('pss-score-display').textContent = d.score;
+  $('pss-interp').textContent = d.interpretation;
+  if (d.output_folder) $('output-path').textContent = d.output_folder;
+  show('s-done');
+});
+</script>
+</body>
+</html>
